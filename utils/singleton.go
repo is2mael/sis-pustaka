@@ -1,18 +1,20 @@
 package utils
 
-import "sync"
+import  "sync"
 
-type OnceSingleton struct {
+type Singleton struct {
 	once sync.Once
-	obj  interface{}
-	fn   func() interface{}
+	obj interface{}
+	fn func() interface{}
 }
 
-func NewOnceSingleton(fn func() interface{}) *OnceSingleton {
-	return &OnceSingleton{fn: fn}
+func NewOneSingleton(fn func() interface{}) *Singleton {
+	return &Singleton{
+		fn: fn,
+	}
 }
 
-func (s *OnceSingleton) Get() interface{} {
+func (s *Singleton) Get() interface{} {
 	s.once.Do(func() {
 		s.obj = s.fn()
 	})

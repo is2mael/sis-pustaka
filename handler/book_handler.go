@@ -1,78 +1,97 @@
 package book_handler
 
 import (
-	"encoding/json" //karna kita mau mengencode data ke json
-	"net/http" //untuk menangani request dan response HTTP
-	"sis-pustaka/model"	//ambil model yang kita buat sebelumnya	
-	"sis-pustaka/storage" //ambil storage yang kita buat sebelumnya
-	
-	"github.com/go-chi/chi/v5" //import chi untuk routing
+	"encoding/json"
+	"net/http"
+	"sis-pustaka/model"
+	"sis-pustaka/storage"
+	"sis-pustaka/handler/response"
+	"github.com/go-chi/chi/v5"
 )
 
 // Get all books
 func GetAllBooks(w http.ResponseWriter, r *http.Request) {
 	books := storage.GetBookStorage().GetAll()
-	writeJSON(w, http.StatusOK, books)
+	response.WriteSuccess(w, http.StatusOK, "Berhasil mengambil semua buku", books)
 }
 
 // Get book by ID
 func GetBookByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	book, found := storage.GetBookStorage().GetByID(id)
-	if !found {
-		http.Error(w, "Book not found", http.StatusNotFound)
+	if id == "" {
+		response.WriteError(w, http.StatusBadRequest, "ID tidak boleh kosong")
 		return
 	}
-	writeJSON(w, http.StatusOK, book)
+	book, found := storage.GetBookStorage().GetByID(id)
+	if !found {
+		response.WriteError(w, http.StatusNotFound, "Buku tidak ditemukan")
+		return
+	}
+	response.WriteSuccess(w, http.StatusOK, "Buku ditemukan", book)
 }
 
 // Create new book
 func CreateBook(w http.ResponseWriter, r *http.Request) {
 	var book model.Book
 	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "JSON tidak valid")
+		return
+	}
+
+	// Validasi field tidak boleh kosong
+	valid, msg := validateBook(book)
+	if !valid {
+		response.WriteError(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	storage.GetBookStorage().Create(book)
-	writeJSON(w, http.StatusCreated, book)
+	response.WriteSuccess(w, http.StatusCreated, "Buku berhasil dibuat", book)
 }
 
 // Update book
 func UpdateBook(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if id == "" {
+		response.WriteError(w, http.StatusBadRequest, "ID tidak boleh kosong")
+		return
+	}
 
 	var updated model.Book
 	if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "JSON tidak valid")
+		return
+	}
+
+	// Validasi field tidak boleh kosong
+	valid, msg := validateBook(updated)
+	if !valid {
+		response.WriteError(w, http.StatusBadRequest, msg)
 		return
 	}
 
 	ok := storage.GetBookStorage().Update(id, updated)
 	if !ok {
-		http.Error(w, "Book not found", http.StatusNotFound)
+		response.WriteError(w, http.StatusNotFound, "Buku tidak ditemukan")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, updated)
+	response.WriteSuccess(w, http.StatusOK, "Buku berhasil diperbarui", updated)
 }
 
 // Delete book
 func DeleteBook(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-
-	ok := storage.GetBookStorage().Delete(id)
-	if !ok {
-		http.Error(w, "Book not found", http.StatusNotFound)
+	if id == "" {
+		response.WriteError(w, http.StatusBadRequest, "ID tidak boleh kosong")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "Deleted"})
-}
+	ok := storage.GetBookStorage().Delete(id)
+	if !ok {
+		response.WriteError(w, http.StatusNotFound, "Buku tidak ditemukan")
+		return
+	}
 
-// Helper: Write JSON response
-func writeJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	response.WriteSuccess(w, http.StatusOK, "Buku " + id + " berhasil dihapus ", nil)
 }
