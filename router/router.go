@@ -15,3 +15,5 @@ func NewRouter() *chi.Mux {
 		r.Put("/{id}", handler.UpdateBook)
 		r.Delete("/{id}", handler.DeleteBook)
 	})
+	return r
+}

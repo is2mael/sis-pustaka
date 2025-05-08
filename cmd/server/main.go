@@ -18,3 +18,5 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+//di file ini kita menginisialisasi router dan menjalankan server HTTP pada port 8080.
