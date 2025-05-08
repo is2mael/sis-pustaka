@@ -4,6 +4,14 @@ Sistem backend sederhana untuk perpustakaan digital menggunakan bahasa pemrogram
 
 ---
 
+## 📌 Important
+
+Untuk memulai anda hanya perlu:
+
+- npm install
+- cd ke sis-pustaka
+- run cmd/server/main.go
+
 ## 📌 Deskripsi
 
 Proyek ini adalah implementasi sederhana dari REST API untuk sistem perpustakaan dengan fitur:
